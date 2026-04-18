@@ -1,0 +1,739 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Phasor Lab — AC Circuit Analysis</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=Outfit:wght@300;400;500;600&family=JetBrains+Mono:ital,wght@0,400;0,500;1,400&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg:#07090f; --surface:#0d1525; --surface2:#12203a; --surface3:#1a2d4a;
+  --border:rgba(100,160,255,0.08); --border2:rgba(100,160,255,0.14);
+  --text:#ddeaf8; --text2:#6a86a8; --text3:#3b536e;
+  --ca:#f6aa2c; --cf:#00cfb4; --cp:#a88af0; --cr:#47bfef; --ci:#f06b8e;
+  /* phasor vector — neutral white so it doesn't clash with the Re (blue) component */
+  --vec:#d4e2f4;
+  --grid:rgba(100,160,255,0.06); --ax:rgba(140,180,230,0.3); --ax-lbl:rgba(140,180,230,0.22);
+  --r-sm:8px; --r-md:12px; --r-lg:16px;
+  --font:'Outfit',sans-serif; --font-mono:'JetBrains Mono',monospace; --font-disp:'DM Serif Display',serif;
+}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+body{background:var(--bg);color:var(--text);font-family:var(--font);font-size:15px;line-height:1.6;min-height:100vh;padding:2rem 1.5rem 4rem}
+
+sup{font-size:0.62em;vertical-align:0.55em;line-height:0;font-family:var(--font-mono)}
+sub{font-size:0.62em;vertical-align:-0.32em;line-height:0}
+
+.page{max-width:1020px;margin:0 auto}
+
+/* ── Header ── */
+.hdr{margin-bottom:2.5rem;padding-bottom:2rem;border-bottom:1px solid var(--border)}
+.hdr-top{display:flex;align-items:flex-start;gap:1.25rem;margin-bottom:.5rem;flex-wrap:wrap}
+.lab-badge{display:inline-block;font-family:var(--font-mono);font-size:10px;font-weight:500;letter-spacing:.12em;text-transform:uppercase;color:var(--cf);background:rgba(0,207,180,.1);border:1px solid rgba(0,207,180,.2);border-radius:4px;padding:3px 10px;margin-top:10px}
+.hdr h1{font-family:var(--font-disp);font-size:clamp(28px,4vw,40px);font-weight:400;line-height:1.15;letter-spacing:-.02em}
+.hdr h1 em{font-style:italic;color:var(--cf)}
+.hdr-author{font-size:12px;color:var(--text3);letter-spacing:.06em;margin-bottom:1.1rem;font-family:var(--font);font-style:italic}
+.hdr-author span{color:var(--text2)}
+.hdr p{font-size:15px;color:var(--text2);max-width:640px;line-height:1.75;margin-bottom:1.5rem}
+
+/* ── Badges ── */
+.badges{display:flex;gap:0;background:var(--surface);border:1px solid var(--border);border-radius:var(--r-md);width:fit-content;overflow:hidden;flex-wrap:wrap}
+.badge{padding:.65rem 1.25rem;border-right:1px solid var(--border)}
+.badge:last-child{border-right:none}
+.badge-sym{font-family:var(--font-mono);font-size:10px;color:var(--text3);display:block;margin-bottom:3px;letter-spacing:.06em}
+.badge-val{font-family:var(--font-mono);font-size:17px;font-weight:500;display:block}
+
+/* ── Cards ── */
+.card{background:var(--surface);border:1px solid var(--border);border-radius:var(--r-lg);padding:1.5rem;margin-bottom:1rem}
+.card-label{font-size:10px;font-weight:600;letter-spacing:.12em;text-transform:uppercase;color:var(--text3);margin-bottom:1.25rem}
+
+/* ── Tabs ── */
+.tabs{display:flex;gap:4px;flex-wrap:wrap;margin-bottom:1.5rem;background:var(--surface2);padding:5px;border-radius:var(--r-md);width:fit-content}
+.tab{padding:7px 14px;border:none;border-radius:var(--r-sm);background:transparent;font-size:13px;font-family:var(--font);color:var(--text2);cursor:pointer;transition:all .18s;white-space:nowrap}
+.tab:hover{color:var(--text);background:var(--surface3)}
+.tab.on{background:var(--surface3);color:var(--text);border:1px solid var(--border2)}
+
+/* ── Theory body ── */
+.theory{font-size:14.5px;color:var(--text2);line-height:1.82}
+.theory p{margin-bottom:1rem}
+.theory p:last-child{margin-bottom:0}
+.theory strong{color:var(--text);font-weight:600}
+
+.eq-block{background:var(--surface2);border:1px solid var(--border);border-radius:var(--r-md);padding:1rem 1.25rem;margin:1rem 0;overflow-x:auto}
+.eq-block-label{font-size:10px;font-weight:600;letter-spacing:.1em;text-transform:uppercase;color:var(--text3);margin-bottom:.75rem}
+.eq-block.center{text-align:center}
+.eq-main{font-family:var(--font-mono);font-size:15px;color:var(--text);line-height:2.1;white-space:nowrap}
+.eq-chain{font-family:var(--font-mono);font-size:14px;color:var(--text);line-height:2.3;white-space:nowrap}
+.eq-chain .step{display:block}
+.eq-chain .step-in{display:block;padding-left:1.5em;color:var(--text2)}
+.eq-chain .ann{font-size:10.5px;color:var(--text3);letter-spacing:.05em;margin-left:.5em}
+.eq-note{font-size:12px;color:var(--text3);margin-top:.5rem;line-height:1.5;font-style:italic}
+
+.chip-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:10px;margin:1rem 0}
+.chip{background:var(--surface2);border:1px solid var(--border);border-radius:var(--r-md);padding:12px 14px}
+.chip-sym{font-family:var(--font-mono);font-size:15px;font-weight:500;display:block;margin-bottom:4px}
+.chip-name{font-size:12px;font-weight:600;color:var(--text);display:block;margin-bottom:2px}
+.chip-desc{font-size:11.5px;color:var(--text2);line-height:1.4;display:block}
+
+/* ── Live equations card ── */
+.eq-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.eq-panel{background:var(--surface2);border:1px solid var(--border);border-radius:var(--r-md);padding:1.1rem 1.25rem;overflow-x:auto}
+.eq-panel-label{font-size:10px;font-weight:600;letter-spacing:.1em;text-transform:uppercase;color:var(--text3);margin-bottom:.9rem}
+.eq-row{font-family:var(--font-mono);font-size:12.5px;line-height:2.15;color:var(--text);display:block;white-space:nowrap}
+.eq-lbl{font-size:10px;display:inline-block;min-width:88px;letter-spacing:.03em}
+.eq-divider{border:none;border-top:1px solid var(--border);margin:.6rem 0}
+
+/* ── Wave legend ── */
+.wave-legend{display:flex;gap:1.2rem;margin-top:.65rem;flex-wrap:wrap}
+.wleg{display:flex;align-items:center;gap:6px;font-size:12px;font-family:var(--font-mono);color:var(--text2)}
+.wleg-dot{width:8px;height:8px;border-radius:50%;flex-shrink:0}
+
+/* ── Simulation ── */
+.sim-row{display:grid;grid-template-columns:300px 1fr;gap:12px;margin-bottom:1rem;align-items:start}
+.sim-hdr{display:flex;justify-content:space-between;align-items:center;margin-bottom:.85rem}
+.sim-label{font-size:10px;font-weight:600;letter-spacing:.12em;text-transform:uppercase;color:var(--text3)}
+.sim-readout{font-family:var(--font-mono);font-size:12px;color:var(--text2)}
+.wave-wrap{overflow-x:auto;overflow-y:hidden}
+
+/* ── Controls ── */
+.ctrl-row{display:grid;grid-template-columns:260px 1fr;gap:12px}
+.transport{display:flex;gap:8px;margin-bottom:1.25rem}
+.btn{font-family:var(--font);font-size:13px;font-weight:500;padding:8px 16px;border:1px solid var(--border2);border-radius:var(--r-sm);background:var(--surface2);color:var(--text2);cursor:pointer;transition:all .15s}
+.btn:hover{background:var(--surface3);color:var(--text)}
+.btn.primary{color:var(--cf);border-color:rgba(0,207,180,.25);background:rgba(0,207,180,.07)}
+.btn.primary:hover{background:rgba(0,207,180,.13)}
+.sl-row{margin-bottom:1.35rem}
+.sl-row:last-child{margin-bottom:0}
+.sl-hdr{display:flex;justify-content:space-between;align-items:flex-end;margin-bottom:10px}
+.sl-lbl{font-size:13px;font-weight:500;color:var(--text)}
+.sl-sub{font-size:11px;color:var(--text3);margin-top:2px}
+.sl-val{font-family:var(--font-mono);font-size:12px;font-weight:500;padding:3px 10px;border-radius:var(--r-sm);border:1px solid;white-space:nowrap}
+.sw{position:relative;height:20px;display:flex;align-items:center}
+.st{position:absolute;height:3px;width:100%;background:var(--surface3);border-radius:2px;pointer-events:none}
+.sf{position:absolute;height:3px;border-radius:2px;pointer-events:none}
+.sth{position:absolute;width:14px;height:14px;border-radius:50%;pointer-events:none;transform:translateX(-50%);box-shadow:0 0 8px rgba(0,0,0,.5)}
+input[type=range]{position:absolute;width:100%;height:100%;opacity:0;cursor:pointer;margin:0;z-index:1}
+input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:0;height:0}
+input[type=range]::-webkit-slider-runnable-track{height:20px;background:transparent}
+
+/* ── Color helpers ── */
+.eqa{color:var(--ca)} .eqf{color:var(--cf)} .eqp{color:var(--cp)} .eqr{color:var(--cr)} .eqi{color:var(--ci)}
+.eqv{color:var(--text);font-style:italic} .dim{color:var(--text3)}
+.ca-border{border-color:rgba(246,170,44,.25)!important} .cf-border{border-color:rgba(0,207,180,.25)!important}
+.cp-border{border-color:rgba(168,138,240,.25)!important} .cr-border{border-color:rgba(71,191,239,.25)!important}
+.ci-border{border-color:rgba(240,107,142,.25)!important}
+
+/* ── Fourier preview section ── */
+.fourier-callout{background:linear-gradient(135deg,rgba(168,138,240,.06),rgba(0,207,180,.04));border:1px solid rgba(168,138,240,.18);border-radius:var(--r-md);padding:1.1rem 1.3rem;margin:1rem 0}
+.fourier-callout-label{font-size:10px;font-weight:600;letter-spacing:.1em;text-transform:uppercase;color:var(--cp);margin-bottom:.5rem}
+
+/* ── Responsive ── */
+@media(max-width:820px){.sim-row,.ctrl-row,.eq-grid{grid-template-columns:1fr}.badges{flex-wrap:wrap}}
+@media(max-width:520px){body{padding:1.25rem 1rem 3rem}.tabs{width:100%}.tab{font-size:12px;padding:6px 10px}.chip-grid{grid-template-columns:1fr}}
+</style>
+</head>
+<body>
+<div class="page">
+
+<header class="hdr">
+  <div class="hdr-top">
+    <h1>Phasor <em>Lab</em></h1>
+    <span class="lab-badge">Interactive</span>
+  </div>
+  <p class="hdr-author">by <span>Shameem Monjazeb</span></p>
+  <p>An interactive visualization of rotating complex vectors, Euler's formula, and their relationship to AC sinusoidal signals. Adjust the controls and watch everything update in real time.</p>
+  <div class="badges">
+    <div class="badge"><span class="badge-sym">Amplitude</span><span class="badge-val eqa" id="hA">80</span></div>
+    <div class="badge"><span class="badge-sym">Frequency</span><span class="badge-val eqf" id="hF">0.50 Hz</span></div>
+    <div class="badge"><span class="badge-sym">Phase ϕ</span><span class="badge-val eqp" id="hP">0°</span></div>
+    <div class="badge"><span class="badge-sym">θ(t) now</span><span class="badge-val dim" id="hT">0.0°</span></div>
+  </div>
+</header>
+
+<div class="card">
+  <div class="tabs" id="tabs">
+    <button class="tab on" data-t="0">What is a phasor?</button>
+    <button class="tab" data-t="1">Euler &amp; rotation</button>
+    <button class="tab" data-t="2">Cos &amp; Sin</button>
+    <button class="tab" data-t="3">Time domain</button>
+    <button class="tab" data-t="4">AC circuits</button>
+    <button class="tab" data-t="5">Unit circle</button>
+    <button class="tab" data-t="6">Fourier &amp; beyond</button>
+    <button class="tab" data-t="7">Waves &amp; reality</button>
+  </div>
+  <div class="theory" id="thy"></div>
+</div>
+
+<div class="card">
+  <div class="card-label">Live Equations</div>
+  <div class="eq-grid">
+    <div class="eq-panel">
+      <div class="eq-panel-label">Static Phasor <span class="dim" style="font-weight:400">(snapshot at t = 0)</span></div>
+      <div id="es"></div>
+    </div>
+    <div class="eq-panel">
+      <div class="eq-panel-label">Full Derivation &amp; Time Domain</div>
+      <div id="ed"></div>
+    </div>
+  </div>
+</div>
+
+<div class="sim-row">
+  <div class="card" style="padding:1.1rem">
+    <div class="sim-hdr">
+      <span class="sim-label">Complex Plane</span>
+      <span class="sim-readout" id="pr"></span>
+    </div>
+    <svg id="psv" width="100%" viewBox="0 0 278 286" style="overflow:visible;display:block"></svg>
+  </div>
+  <div class="card" style="padding:1.1rem">
+    <div class="sim-hdr">
+      <span class="sim-label">Time Domain</span>
+      <span class="sim-readout" id="wr"></span>
+    </div>
+    <div class="wave-wrap">
+      <svg id="wsv" width="100%" height="218" viewBox="0 0 580 218" style="min-width:480px;overflow:visible;display:block"></svg>
+    </div>
+    <div class="wave-legend">
+      <div class="wleg"><div class="wleg-dot" style="background:var(--ci)"></div><span class="eqi">sin(ωt+ϕ)</span>&nbsp;<span class="dim">= Im{𝐕} &mdash; red dot ↑↓</span></div>
+      <div class="wleg"><div class="wleg-dot" style="background:var(--cr)"></div><span class="eqr">cos(ωt+ϕ)</span>&nbsp;<span class="dim">= Re{𝐕} &mdash; blue dot ←→</span></div>
+    </div>
+  </div>
+</div>
+
+<div class="ctrl-row">
+  <div class="card">
+    <div class="card-label">Transport</div>
+    <div class="transport">
+      <button id="bp" class="btn primary" style="flex:1">⏸&nbsp; Pause</button>
+      <button id="br" class="btn" style="padding:8px 14px" title="Reset to t=0">↺ Reset</button>
+    </div>
+    <div class="sl-row">
+      <div class="sl-hdr">
+        <div class="sl-lbl" style="font-size:12px;color:var(--text2)">Time scrub</div>
+        <span class="sl-val eqf cf-border" id="vT">0.00 s</span>
+      </div>
+      <div class="sw"><div class="st"></div><div class="sf" id="fT" style="background:var(--cf)"></div><div class="sth" id="tT" style="background:var(--cf)"></div><input type="range" id="sT" min="0" max="20" step="0.01" value="0"></div>
+    </div>
+  </div>
+  <div class="card">
+    <div class="card-label">Wave Parameters</div>
+    <div class="sl-row">
+      <div class="sl-hdr">
+        <div><div class="sl-lbl">Amplitude <span class="eqa" style="font-family:var(--font-mono)">(A)</span></div><div class="sl-sub">Vector length &amp; wave height</div></div>
+        <span class="sl-val eqa ca-border" id="vA">80</span>
+      </div>
+      <div class="sw"><div class="st"></div><div class="sf" id="fA" style="background:var(--ca)"></div><div class="sth" id="tA" style="background:var(--ca)"></div><input type="range" id="sA" min="10" max="100" step="1" value="80"></div>
+    </div>
+    <div class="sl-row">
+      <div class="sl-hdr">
+        <div><div class="sl-lbl">Frequency <span class="eqf" style="font-family:var(--font-mono)">(f)</span></div><div class="sl-sub">Rotations per second (Hz)</div></div>
+        <span class="sl-val eqf cf-border" id="vF">0.50 Hz</span>
+      </div>
+      <div class="sw"><div class="st"></div><div class="sf" id="fF" style="background:var(--cf)"></div><div class="sth" id="tF" style="background:var(--cf)"></div><input type="range" id="sF" min="0.1" max="2" step="0.05" value="0.5"></div>
+    </div>
+    <div class="sl-row">
+      <div class="sl-hdr">
+        <div><div class="sl-lbl">Phase shift <span class="eqp" style="font-family:var(--font-mono)">(ϕ)</span></div><div class="sl-sub">Initial angle at t = 0</div></div>
+        <span class="sl-val eqp cp-border" id="vP">0°</span>
+      </div>
+      <div class="sw"><div class="st"></div><div class="sf" id="fP" style="background:var(--cp)"></div><div class="sth" id="tP" style="background:var(--cp)"></div><input type="range" id="sP" min="-180" max="180" step="1" value="0"></div>
+    </div>
+  </div>
+</div>
+
+</div>
+<script>
+const S={A:80,f:0.5,phi:0,t:0,play:true};
+let lastTs=null;
+
+/* ══════════════════════════════════════════════════
+   THEORY CONTENT
+══════════════════════════════════════════════════ */
+const theories=[
+
+/* 0 — What is a phasor? */
+`<p>AC circuits deal with voltages and currents that oscillate sinusoidally at a fixed frequency. Tracking a full sine wave through every calculation is painful. A <strong>phasor</strong> solves this: it compresses an entire sinusoidal signal down to just two numbers — <strong>amplitude</strong> and <strong>phase angle</strong>.</p>
+<p>Think of a phasor as a <strong>frozen arrow in the complex plane</strong>. Its length equals the peak amplitude of the signal, and its angle off the positive real axis is the phase — where the oscillation starts at t = 0. Everything else follows from those two values.</p>
+<p>Phasors have two equivalent notations you will switch between constantly:</p>
+<div class="eq-block">
+  <div class="eq-block-label">Polar Form — compact, intuitive</div>
+  <div class="eq-main"><span class="eqv">𝐕</span> = <span class="eqa">A</span> ∠ <span class="eqp">ϕ</span></div>
+  <div class="eq-note">Read as "magnitude A at angle ϕ". The natural form for multiplication and division.</div>
+</div>
+<div class="eq-block">
+  <div class="eq-block-label">Rectangular Form — needed for addition/subtraction</div>
+  <div class="eq-main"><span class="eqv">𝐕</span> = <span class="eqr">A·cos ϕ</span> + j·<span class="eqi">A·sin ϕ</span></div>
+  <div class="eq-note">Real part = horizontal projection onto Re axis. Imaginary part = vertical projection onto Im axis.</div>
+</div>
+<div class="chip-grid">
+  <div class="chip" style="border-color:rgba(246,170,44,.25)"><span class="chip-sym eqa">A</span><span class="chip-name">Amplitude</span><span class="chip-desc">Length of the arrow = peak value of the wave</span></div>
+  <div class="chip" style="border-color:rgba(168,138,240,.25)"><span class="chip-sym eqp">ϕ</span><span class="chip-name">Phase angle</span><span class="chip-desc">Starting angle at t = 0 — shifts the wave left or right in time</span></div>
+  <div class="chip" style="border-color:rgba(71,191,239,.25)"><span class="chip-sym eqr" style="font-size:13px">a + jb</span><span class="chip-name">Rectangular</span><span class="chip-desc">Real (a) and imaginary (b) components of the arrow</span></div>
+</div>
+<p>The phasor itself doesn't change with time — that's the whole point. It's a static representation of a time-varying signal, which turns circuit math from calculus into complex algebra.</p>`,
+
+/* 1 — Euler & rotation */
+`<p>The secret behind phasors is <strong>Euler's formula</strong> — arguably the most important equation in all of electrical engineering. It connects complex exponentials to trigonometry:</p>
+<div class="eq-block center">
+  <div class="eq-block-label">Euler's Formula</div>
+  <div class="eq-main">e<sup>jθ</sup> = cos θ + j·sin θ</div>
+  <div class="eq-note">A complex exponential with a purely imaginary exponent traces a perfect unit circle as θ increases.</div>
+</div>
+<p>Using this, any phasor can be written as a complex exponential. At t = 0 the <strong>static phasor</strong> is:</p>
+<div class="eq-block">
+  <div class="eq-block-label">Static Phasor — frozen at t = 0</div>
+  <div class="eq-main"><span class="eqv">𝐕</span> = <span class="eqa">A</span>·e<sup>j<span class="eqp">ϕ</span></sup></div>
+  <div class="eq-note">The arrow has length A and points at angle ϕ. It is static — time hasn't been introduced yet.</div>
+</div>
+<p><strong>Multiplying by e<sup>j<span class="eqf">ω</span>t</sup> makes the arrow rotate.</strong> As t increases, the total angle grows continuously, spinning the arrow counterclockwise. Here is the complete derivation in one place:</p>
+<div class="eq-block">
+  <div class="eq-block-label">Rotating Phasor — multiply by &exponentiale;<sup>jwt</sup> — full derivation</div>
+  <div class="eq-chain">
+    <span class="step"><span class="eqv">𝐕</span>(t) = <span class="eqa">A</span>·e<sup>j<span class="eqp">ϕ</span></sup> · e<sup>j<span class="eqf">ω</span>t</sup> <span class="ann">← static phasor × rotation factor</span></span>
+    <span class="step-in">= <span class="eqa">A</span>·e<sup>j(<span class="eqf">ω</span>t + <span class="eqp">ϕ</span>)</sup> <span class="ann">← combine exponents</span></span>
+    <span class="step-in">= <span class="eqa">A</span>·[cos(<span class="eqf">ω</span>t+<span class="eqp">ϕ</span>) + j·sin(<span class="eqf">ω</span>t+<span class="eqp">ϕ</span>)] <span class="ann">← Euler's formula</span></span>
+    <span class="step-in">= <span class="eqr">A·cos(<span class="eqf">ω</span>t+<span class="eqp">ϕ</span>)</span> + j·<span class="eqi">A·sin(<span class="eqf">ω</span>t+<span class="eqp">ϕ</span>)</span> <span class="ann">← real + imaginary parts</span></span>
+  </div>
+  <div class="eq-note">Every step is just algebra and Euler's formula — no tricks. The static phasor is e<sup>jωt</sup> evaluated at t = 0.</div>
+</div>
+<div class="chip-grid">
+  <div class="chip" style="border-color:rgba(0,207,180,.25)"><span class="chip-sym eqf">ω = 2πf</span><span class="chip-name">Angular frequency</span><span class="chip-desc">Radians per second — the spin rate of the phasor arrow</span></div>
+  <div class="chip" style="border-color:rgba(0,207,180,.25)"><span class="chip-sym eqf">T = 1/f</span><span class="chip-name">Period</span><span class="chip-desc">Time for one full 360° rotation (one complete AC cycle)</span></div>
+  <div class="chip" style="border-color:rgba(168,138,240,.25)"><span class="chip-sym eqp">θ(t) = ωt+ϕ</span><span class="chip-name">Instantaneous angle</span><span class="chip-desc">Current angle of the arrow at any given moment t</span></div>
+</div>
+<p>Watch the complex plane on the right — the rotating arrow is not a metaphor. It <em>literally is</em> the AC signal, encoded as a rotating complex vector. The time-domain wave emerges by reading off one component of that rotation at each moment.</p>`,
+
+/* 2 — Cos & Sin */
+`<p>When you apply Euler's formula to the rotating phasor, something remarkable happens: you don't get one wave — you get <strong>two, simultaneously, for free</strong>. And you can see both of them happening right now on the diagram.</p>
+<p><strong>Look at the complex plane:</strong> as the phasor arrow spins, it casts two projections — one onto each axis. Those two projections oscillate independently. Each one is tracing out a sinusoidal wave over time:</p>
+<div class="eq-block">
+  <div class="eq-block-label">Where both waves come from</div>
+  <div class="eq-chain">
+    <span class="step"><span class="eqv">𝐕</span>(t) = <span class="eqa">A</span>·e<sup>j(<span class="eqf">ω</span>t+<span class="eqp">ϕ</span>)</sup> = <span class="eqa">A</span>·[cos(<span class="eqf">ω</span>t+<span class="eqp">ϕ</span>) + j·sin(<span class="eqf">ω</span>t+<span class="eqp">ϕ</span>)]</span>
+  </div>
+  <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:.9rem">
+    <div style="background:rgba(71,191,239,.06);border:1px solid rgba(71,191,239,.2);border-radius:8px;padding:12px">
+      <div style="font-size:10px;letter-spacing:.08em;color:var(--cr);font-weight:600;text-transform:uppercase;margin-bottom:8px">Re{𝐕(t)} — Real Part</div>
+      <div class="eq-chain" style="font-size:13px"><span class="step"><span class="eqr">Re{𝐕(t)}</span> = <span class="eqa">A</span>·cos(<span class="eqf">ω</span>t+<span class="eqp">ϕ</span>)</span></div>
+      <div class="eq-note" style="margin-top:8px">The <strong style="color:var(--cr)">blue dot</strong> on the Re axis moving <strong>←→</strong> is plotting this. Its horizontal position over time draws the cosine wave.</div>
+    </div>
+    <div style="background:rgba(240,107,142,.06);border:1px solid rgba(240,107,142,.2);border-radius:8px;padding:12px">
+      <div style="font-size:10px;letter-spacing:.08em;color:var(--ci);font-weight:600;text-transform:uppercase;margin-bottom:8px">Im{𝐕(t)} — Imaginary Part</div>
+      <div class="eq-chain" style="font-size:13px"><span class="step"><span class="eqi">Im{𝐕(t)}</span> = <span class="eqa">A</span>·sin(<span class="eqf">ω</span>t+<span class="eqp">ϕ</span>)</span></div>
+      <div class="eq-note" style="margin-top:8px">The <strong style="color:var(--ci)">red dot</strong> on the Im axis moving <strong>↑↓</strong> is plotting this. Its vertical position over time draws the sine wave.</div>
+    </div>
+  </div>
+  <div class="eq-note" style="margin-top:10px">Plotting harmonic motion is that simple — watch one axis as time passes, and you have a sinusoidal wave. The wave is nothing more than the shadow of a rotation.</div>
+</div>
+<p><strong>What is the actual difference between cos and sin?</strong> They are the exact same shape — a pure sinusoid — offset by exactly 90° (one quarter-period T/4). At t = 0: cos(0) = 1 (starts at peak), sin(0) = 0 (starts at zero and rises). They are <strong>orthogonal</strong>: one reaches its maximum exactly when the other passes through zero. This 90° relationship is the geometric bedrock of all AC phase analysis.</p>
+<div class="eq-block">
+  <div class="eq-block-label">The 90° offset — never changes, regardless of A, f, or ϕ</div>
+  <div class="eq-chain">
+    <span class="step"><span class="eqr">cos(ωt+ϕ)</span> = <span class="eqi">sin(ωt+ϕ</span> + 90°<span class="eqi">)</span></span>
+    <span class="step-in dim" style="font-size:12px">Cosine leads sine by 90°. Or equivalently: sine lags cosine by 90°.</span>
+  </div>
+</div>
+<p><strong>Which convention does AC circuit analysis use?</strong> The <span class="eqr">cosine convention</span> — v(t) = V<sub>m</sub>·cos(ωt+ϕ) — is the IEEE standard in power engineering, because taking Re{<strong>𝐕</strong>·e<sup>jωt</sup>} directly yields cosine with no sign adjustment. Sine is equally used in physics and signals courses. Both are completely correct.</p>
+<p><strong>Does it matter which you choose?</strong> No — as long as you are <em>consistent within a single analysis</em>. Phasors compare signals by their <em>relative</em> phase. Whether you anchor to cosine or sine, all phase differences between voltages and currents remain identical. The choice only shifts the absolute reference angle, never the physics.</p>
+<p style="font-size:13px;color:var(--text3);border-top:1px solid var(--border);padding-top:.85rem;margin-top:.5rem">Watch the wave panel: the <span class="eqr">blue cosine curve</span> and the <span class="eqi">red sine curve</span> are always exactly one quarter-period apart. Drag the phase slider ϕ and both curves slide in lockstep — the 90° gap between them never changes. That gap is a geometric inevitability of circular motion.</p>`,
+
+/* 3 — Time domain */
+`<p>The <strong>time domain</strong> is what you'd see on an oscilloscope — voltage or current plotted against time. It's the physical, real-world view of the signal.</p>
+<p>The connection to the rotating phasor is beautifully simple: <strong>the time-domain signal is just the projection of the rotating phasor onto one axis</strong>. Using the Im axis gives sine; using the Re axis gives cosine:</p>
+<div class="eq-block center">
+  <div class="eq-block-label">From rotating phasor to time domain</div>
+  <div class="eq-main"><span class="eqr">cos</span>: Re{<span class="eqv">𝐕</span>(t)} = <span class="eqa">A</span>·cos(<span class="eqf">ω</span>t + <span class="eqp">ϕ</span>)</div>
+  <div class="eq-main" style="margin-top:6px"><span class="eqi">sin</span>: Im{<span class="eqv">𝐕</span>(t)} = <span class="eqa">A</span>·sin(<span class="eqf">ω</span>t + <span class="eqp">ϕ</span>)</div>
+  <div class="eq-note">As the phasor rotates, its shadows on Re and Im each trace a perfect sinusoid, permanently offset by 90°.</div>
+</div>
+<p>Each phasor parameter maps directly to a visible feature of the wave:</p>
+<div class="chip-grid">
+  <div class="chip" style="border-color:rgba(246,170,44,.25)"><span class="chip-sym eqa">A → wave height</span><span class="chip-name">Amplitude</span><span class="chip-desc">Arrow length = peak value of the signal. Half the peak-to-peak range.</span></div>
+  <div class="chip" style="border-color:rgba(0,207,180,.25)"><span class="chip-sym eqf">f → wave speed</span><span class="chip-name">Frequency</span><span class="chip-desc">Cycles per second. Higher f = faster oscillation = more compressed wave.</span></div>
+  <div class="chip" style="border-color:rgba(168,138,240,.25)"><span class="chip-sym eqp">ϕ → wave shift</span><span class="chip-name">Phase</span><span class="chip-desc">Starting angle. ϕ > 0 shifts the wave left (earlier in time).</span></div>
+</div>
+<p>Why use phasors at all? Because in AC circuits, f is fixed for every component. Only A and ϕ vary between signals. Phasors strip out the common rotation e<sup>jωt</sup> and let us work with just the static part — turning differential equations into complex number multiplication.</p>
+<p style="font-size:13px;color:var(--text3);border-top:1px solid var(--border);padding-top:.85rem;margin-top:.5rem">The cosine convention v(t) = A·cos(ωt+ϕ) = Re{𝐕(t)} is the IEEE standard in power engineering. Sine (Im) is standard in many signals and physics courses. Both are mathematically equivalent — they only differ in which axis you project onto.</p>`,
+
+/* 4 — AC circuits */
+`<p>In any AC circuit, all voltages and currents share the same frequency. Only their amplitudes and phases differ. Phasors are built for exactly this situation.</p>
+<p><strong>Impedance</strong> Z is the complex generalization of resistance — it encodes both the amplitude ratio and phase shift that each component introduces:</p>
+<div class="eq-block center">
+  <div class="eq-block-label">Ohm's Law for AC — works directly with phasors</div>
+  <div class="eq-main"><span class="eqv">𝐕</span> = <span class="eqv">𝐈</span> · <span class="eqv">Z</span></div>
+  <div class="eq-note">Identical in form to DC Ohm's Law — but V, I, and Z are all complex numbers.</div>
+</div>
+<div class="chip-grid">
+  <div class="chip" style="border-color:rgba(71,191,239,.25)"><span class="chip-sym eqr">Z<sub>R</sub> = R</span><span class="chip-name">Resistor</span><span class="chip-desc">Pure real. No phase shift — voltage and current stay perfectly in phase.</span></div>
+  <div class="chip" style="border-color:rgba(168,138,240,.25)"><span class="chip-sym eqp">Z<sub>L</sub> = jωL</span><span class="chip-name">Inductor</span><span class="chip-desc">Pure imaginary. Voltage leads current by 90°. Impedance grows with frequency.</span></div>
+  <div class="chip" style="border-color:rgba(240,107,142,.25)"><span class="chip-sym eqi">Z<sub>C</sub> = 1/jωC</span><span class="chip-name">Capacitor</span><span class="chip-desc">Pure imaginary (negative). Current leads voltage by 90°. Impedance falls with frequency.</span></div>
+</div>
+<p>The payoff: instead of solving differential equations for every RLC network, combine impedances with the same series/parallel rules as resistors, then divide phasors. What was a differential equation becomes division of two complex numbers.</p>
+<p>Voltage divider in AC: <span style="font-family:var(--font-mono);font-size:13px;color:var(--text)">𝐕<sub>out</sub> = 𝐕<sub>in</sub> · Z<sub>2</sub>/(Z<sub>1</sub>+Z<sub>2</sub>)</span> — identical in form to DC, but the ratio is complex, giving you amplitude scaling and phase shift in one step.</p>
+<p style="font-size:13px;color:var(--text3);border-top:1px solid var(--border);padding-top:.85rem;margin-top:.5rem">Mnemonic: <strong>"ELI the ICE man"</strong> — in an inductor (L), voltage (E) leads current (I). In a capacitor (C), current (I) leads voltage (E).</p>`,
+
+/* 5 — Unit circle */
+`<p>You might notice that the complex plane on the right looks <em>very familiar</em>. That dashed circle the phasor traces out? You have seen it before — it is the <strong>unit circle you memorized in trigonometry class</strong>. The phasor is the unit circle, finally animated and explained.</p>
+<p>Recall: for any angle θ measured counterclockwise from the positive x-axis, a point on the unit circle has coordinates (<span class="eqr">cos θ</span>, <span class="eqi">sin θ</span>). Those are the exact same values the phasor produces at each instant. Your teacher made you memorize dozens of those coordinates — but no one explained that they are simply the instantaneous amplitudes of a rotating AC signal at those exact phase angles.</p>
+<div class="eq-block">
+  <div class="eq-block-label">The unit circle is just a phasor with A = 1</div>
+  <div class="eq-chain">
+    <span class="step">Phasor tip at angle θ: &nbsp;(<span class="eqr">cos θ</span>,&nbsp;<span class="eqi">sin θ</span>) = (<span class="eqr">Re</span>,&nbsp;<span class="eqi">Im</span>)</span>
+    <span class="step-in dim" style="font-size:12px">When A = 1 and θ = ωt + ϕ, the tip traces the unit circle exactly as t increases.</span>
+  </div>
+</div>
+<p>Those memorized values are just snapshots of the rotating phasor at specific angles:</p>
+<div class="chip-grid">
+  <div class="chip" style="border-color:rgba(71,191,239,.13)"><span class="chip-sym" style="color:var(--text);font-size:13px">θ = 0°</span><span class="chip-name" style="color:var(--text2)">Start — phasor points right</span><span class="chip-desc"><span class="eqr">cos 0° = 1</span>, <span class="eqi">sin 0° = 0</span> — cosine at peak, sine at zero-crossing</span></div>
+  <div class="chip" style="border-color:rgba(71,191,239,.13)"><span class="chip-sym" style="color:var(--text);font-size:13px">θ = 90°</span><span class="chip-name" style="color:var(--text2)">Quarter turn — phasor points up</span><span class="chip-desc"><span class="eqr">cos 90° = 0</span>, <span class="eqi">sin 90° = 1</span> — sine at peak, cosine at zero</span></div>
+  <div class="chip" style="border-color:rgba(71,191,239,.13)"><span class="chip-sym" style="color:var(--text);font-size:13px">θ = 180°</span><span class="chip-name" style="color:var(--text2)">Half turn — phasor points left</span><span class="chip-desc"><span class="eqr">cos 180° = −1</span>, <span class="eqi">sin 180° = 0</span> — cosine at negative peak</span></div>
+  <div class="chip" style="border-color:rgba(71,191,239,.13)"><span class="chip-sym" style="color:var(--text);font-size:13px">θ = 45°</span><span class="chip-name" style="color:var(--text2)">Diagonal — equal components</span><span class="chip-desc"><span class="eqr">cos 45° = √2/2</span>, <span class="eqi">sin 45° = √2/2</span> — both components equal</span></div>
+</div>
+<p>The only difference between the static unit circle you memorized and this diagram is <strong>time</strong>. The phasor introduces ω — a rate of rotation. Once time flows, θ = ωt + ϕ grows continuously, and the tip sweeps the circle at a steady angular velocity. The unit circle becomes a movie, not a photograph.</p>
+<p><strong>This is what sinusoidal motion fundamentally is.</strong> An AC outlet at 120 V, 60 Hz is a phasor of length ≈170 V (peak) spinning at 60 rotations per second. Your oscilloscope shows you the Im projection of that rotation versus time. The alternating current in your wall is a shadow of a rotation.</p>
+<div class="eq-block center">
+  <div class="eq-block-label">From unit circle to AC signal — the complete picture</div>
+  <div class="eq-chain" style="display:inline-block;text-align:left">
+    <span class="step">Unit circle at θ: &nbsp;(<span class="eqr">cos θ</span>,&nbsp;<span class="eqi">sin θ</span>)</span>
+    <span class="step-in">Scale by A: &nbsp;(<span class="eqr">A·cos θ</span>,&nbsp;<span class="eqi">A·sin θ</span>)</span>
+    <span class="step-in">Let θ grow: &nbsp;θ = <span class="eqf">ω</span>t + <span class="eqp">ϕ</span></span>
+    <span class="step-in">→ &nbsp;<span class="eqr">A·cos(<span class="eqf">ω</span>t+<span class="eqp">ϕ</span>)</span> &nbsp;or &nbsp;<span class="eqi">A·sin(<span class="eqf">ω</span>t+<span class="eqp">ϕ</span>)</span></span>
+  </div>
+  <div class="eq-note">Every sinusoidal signal in every AC circuit is a scaled, spinning unit circle. That is the whole story.</div>
+</div>
+<p style="font-size:13px;color:var(--text3);border-top:1px solid var(--border);padding-top:.85rem;margin-top:.5rem">Try setting A = 100 and slowly sweeping ϕ from 0° to 360°. Watch the phasor make one full lap and return to its start. You are watching one complete AC cycle — the same rotation your calculus teacher drew, finally put into motion.</p>`,
+
+/* 6 — Fourier & beyond */
+`<p>Everything you have learned here — a single rotating phasor at one frequency — is the foundation of something far more powerful. The <strong>Fourier transform</strong> is the natural next chapter, and it is built entirely from what you now understand.</p>
+
+<p>Here is the key insight: <strong>any signal whatsoever can be broken into a sum of rotating phasors</strong>. A square wave, a voice recording, an ECG signal, a WiFi transmission — all of them are just combinations of complex exponentials e<sup>jωt</sup> at different frequencies, amplitudes, and phases. The phasor you have been watching is one frequency component. Real signals carry thousands of them at once.</p>
+
+<div class="eq-block">
+  <div class="eq-block-label">Fourier series — summing phasors to build any periodic signal</div>
+  <div class="eq-chain">
+    <span class="step">x(t) = <span class="eqa">A</span><sub>0</sub> + <span class="eqr">A</span><sub>1</sub>·cos(<span class="eqf">ω</span>t+<span class="eqp">ϕ</span><sub>1</sub>) + <span class="eqr">A</span><sub>2</sub>·cos(<span class="eqf">2ω</span>t+<span class="eqp">ϕ</span><sub>2</sub>) + <span class="eqr">A</span><sub>3</sub>·cos(<span class="eqf">3ω</span>t+<span class="eqp">ϕ</span><sub>3</sub>) + …</span>
+    <span class="step-in dim" style="font-size:12px">Each term is a single phasor like the one you see spinning on the left — just at a different frequency and amplitude.</span>
+  </div>
+  <div class="eq-note">A square wave, for example, is built from infinitely many odd harmonics: cos(ωt) − (1/3)cos(3ωt) + (1/5)cos(5ωt) − … Add enough phasors and the sum snaps into a perfect square.</div>
+</div>
+
+<p>The <strong>Fourier Transform</strong> extends this idea beyond periodic signals to any signal in time, asking: "what mix of frequencies is present in this signal, and at what amplitudes and phases?" The answer it returns is called the <strong>frequency spectrum</strong> — a map of which phasors (at which frequencies) make up the signal.</p>
+
+<div class="fourier-callout">
+  <div class="fourier-callout-label">The Fourier Transform — concept</div>
+  <p style="font-size:13.5px;color:var(--text2);line-height:1.75;margin:0">Think of the Fourier Transform as a <strong style="color:var(--text)">prism for signals</strong>. Just as a glass prism splits white light into its component colors (frequencies), the Fourier Transform splits a time-domain signal into its component phasors. Each phasor contributes one "color" — one frequency — to the overall shape of the signal. The transform tells you exactly how bright each color is (amplitude) and where it starts (phase).</p>
+</div>
+
+<p><strong>Why does this matter for electrical engineering?</strong> Because filters, amplifiers, antennas, and communication systems all operate differently at different frequencies. Understanding a signal's frequency content tells you how it will behave through any circuit. An audio equalizer boosts certain frequency phasors and attenuates others. A radio antenna selects one frequency phasor out of all the signals in the air. An AC power converter works by manipulating the fundamental phasor and suppressing harmonics.</p>
+
+<p><strong>How does what you learned here connect?</strong> Every tool you have built intuition for maps directly into Fourier analysis:</p>
+
+<div class="chip-grid">
+  <div class="chip" style="border-color:rgba(168,138,240,.25)"><span class="chip-sym eqp">e<sup>jωt</sup></span><span class="chip-name">The building block</span><span class="chip-desc">The rotating phasor IS the basis function of the Fourier transform. Every concept here carries forward directly.</span></div>
+  <div class="chip" style="border-color:rgba(0,207,180,.25)"><span class="chip-sym eqf">ω → spectrum</span><span class="chip-name">Frequency axis</span><span class="chip-desc">The Fourier transform maps time → frequency. Each point on the spectrum is one phasor component.</span></div>
+  <div class="chip" style="border-color:rgba(71,191,239,.25)"><span class="chip-sym eqr">Re{·}</span><span class="chip-name">Real spectrum</span><span class="chip-desc">The cosine components of each frequency — directly the real part of the complex Fourier coefficients.</span></div>
+  <div class="chip" style="border-color:rgba(240,107,142,.25)"><span class="chip-sym eqi">Im{·}</span><span class="chip-name">Imaginary spectrum</span><span class="chip-desc">The sine components of each frequency — directly the imaginary part of the complex Fourier coefficients.</span></div>
+</div>
+
+<p>The step from this tool to the Fourier series is simply this: instead of one arrow spinning, you superimpose many arrows — at frequencies ω, 2ω, 3ω, … — each with its own amplitude and phase. Their tips all trace circles simultaneously, and the sum of their projections builds whatever waveform you want. It is the same physics you have been watching, scaled up into an infinite orchestra of rotating phasors.</p>
+
+<p style="font-size:13px;color:var(--text3);border-top:1px solid var(--border);padding-top:.85rem;margin-top:.5rem"><strong style="color:var(--text2)">What's next:</strong> A natural next step is an interactive Fourier Series explorer — where you can add harmonics one at a time and watch them sum into square waves, sawtooth waves, and triangle waves in real time. Each harmonic would be a phasor just like this one, rotating at an integer multiple of the base frequency. The intuition you have built here is everything you need to understand it immediately.</p>`,
+
+/* 7 — Waves & reality */
+`<p>Step back for a moment from circuits and equations. You have spent this entire session studying a rotating arrow — two numbers, an amplitude and a phase, spinning at a fixed rate. It seems almost too simple to matter. And yet, if you look at the world with fresh eyes, you will find that this same pattern — this same fundamental rotation — is <strong>the hidden language of reality itself</strong>.</p> 
+
+<p>The universe, at every scale, speaks in waves. And waves, at their core, are just cosine and sine.</p>
+
+<div class="eq-block center">
+  <div class="eq-block-label">The universal signature</div>
+  <div class="eq-main"><span class="eqr">A·cos(</span><span class="eqf">ω</span>t + <span class="eqp">ϕ</span><span class="eqr">)</span></div>
+  <div class="eq-note">This single expression describes the oscillation of a pendulum, the pressure of sound, the electric field of light, the quantum state of an electron, the displacement of a violin string, and the gravitational ripple of two colliding black holes — six phenomena spanning forty orders of magnitude in scale, one equation.</div>
+</div>
+
+<p><strong>Sound</strong> is a pressure wave — air molecules pushed together and pulled apart in a sinusoidal rhythm. When you hear a musical note at 440 Hz, you are feeling 440 complete cycles of compression and rarefaction every second. A pure tone is a single phasor. A chord is a Fourier sum of phasors. The rich warmth of a cello versus the bright edge of a trumpet is nothing more than a different set of harmonic amplitudes — a different fingerprint of rotating arrows. Every piece of music ever composed is, at bottom, a sculpture made of cosines.</p>
+
+<p><strong>Light</strong> is an electromagnetic wave — oscillating electric and magnetic fields, perpendicular to each other and to the direction of travel, vibrating at frequencies so high (hundreds of terahertz) that we perceive them not as oscillations we can track, but as color. Infrared, visible red, green, blue, ultraviolet, X-rays, gamma rays — they are all the same phenomenon: <span class="eqr">E(t) = E₀·cos(ωt + ϕ)</span>, differentiated only by ω. The entire electromagnetic spectrum, from the radio wave carrying this webpage to your router to the gamma ray bursting from a dying star, is one equation swept across sixty decades of frequency.</p>
+
+<div class="chip-grid">
+  <div class="chip" style="border-color:rgba(246,170,44,.2)"><span class="chip-sym eqa" style="font-size:13px">Radio / WiFi</span><span class="chip-name">kHz → GHz</span><span class="chip-desc">The signal in your phone is a phasor. Encoding information means modulating its amplitude (A), frequency (ω), or phase (ϕ) — AM, FM, and phase-shift keying respectively.</span></div>
+  <div class="chip" style="border-color:rgba(0,207,180,.2)"><span class="chip-sym eqf" style="font-size:13px">Sound / Music</span><span class="chip-name">20 Hz → 20 kHz</span><span class="chip-desc">Every instrument produces a fundamental phasor plus harmonics. Timbre — the thing that makes a piano sound different from a flute on the same note — is the shape of that harmonic fingerprint.</span></div>
+  <div class="chip" style="border-color:rgba(71,191,239,.2)"><span class="chip-sym eqr" style="font-size:13px">Visible Light</span><span class="chip-name">430 → 750 THz</span><span class="chip-desc">Color is frequency. Your eye has three types of cone photoreceptors — three biological phasor detectors, each tuned to a different ω band, whose outputs your brain combines into the experience of color.</span></div>
+  <div class="chip" style="border-color:rgba(168,138,240,.2)"><span class="chip-sym eqp" style="font-size:13px">Quantum waves</span><span class="chip-name">ψ(x,t)</span><span class="chip-desc">An electron doesn’t occupy a single position — it exists as a complex wave function ψ ∝ e^(jkx − jωt). The probability of finding it anywhere is |ψ|², the square of a rotating phasor.</span></div>
+</div>
+
+<p><strong>Quantum mechanics</strong> may be the deepest example. The Schrödinger equation — the equation governing all matter at the smallest scales — is fundamentally a wave equation. The wave function ψ is complex-valued, written in the exact form you have been working with all session: ψ ∝ e<sup>j(<span class="eqf">k</span>x − <span class="eqf">ω</span>t)</sup>. An electron orbiting a nucleus, a photon inside a laser cavity, a qubit in a quantum computer — all are phasors. The entire periodic table of elements, every chemical bond, every material property of every substance that has ever existed, emerges from the interference of these quantum phasors. The reason gold is yellow, the reason diamond is hard, the reason semiconductors can be switched on and off — it all traces back to the same rotating complex exponential you see on the left.</p>
+
+<p><strong>Gravitational waves</strong> are ripples in the curvature of spacetime itself, traveling at the speed of light, causing distances to stretch and compress sinusoidally as they pass. When two black holes spiral together and collide, they radiate energy as gravitational phasors. The LIGO detector that first observed this in 2015 — a century after Einstein predicted it — measured a displacement of less than one-thousandth the diameter of a proton, by searching for a sinusoidal pattern buried in noise. Fourier analysis, applied to the output of a laser interferometer four kilometers long, pulled the wave out of the chaos.</p>
+
+<div class="eq-block">
+  <div class="eq-block-label">Why waves are everywhere — the deep reason</div>
+  <div class="eq-chain">
+    <span class="step dim" style="font-size:13px">Most of nature rests near a stable equilibrium.</span>
+    <span class="step-in dim" style="font-size:13px">When displaced, a restoring force pushes it back.</span>
+    <span class="step-in dim" style="font-size:13px">Inertia causes it to overshoot. Then it corrects again.</span>
+    <span class="step-in" style="font-size:13px">Overshoot + restore = oscillation. Mathematically: &nbsp;&nbsp;d²x/dt² = −<span class="eqf">ω²</span>x</span>
+    <span class="step-in" style="font-size:13px">→ the only solution is: &nbsp;<span class="eqr">x(t) = A·cos(<span class="eqf">ω</span>t + <span class="eqp">ϕ</span>)</span></span>
+  </div>
+  <div class="eq-note">This differential equation — and its sinusoidal solution — appears whenever anything is pulled back toward balance. A spring, a pendulum, an LC circuit, an atom, the metric of spacetime around a perturbation. Cosine and sine are not just convenient functions. They are the inevitable mathematical shape that equilibrium plus inertia always produces.</div>
+</div>
+
+<p>Your own heartbeat is a wave — a rhythmic pressure phasor that your circulatory system pumps through 100,000 kilometers of blood vessels. The electrical activity of your neurons as you read this produces oscillations: alpha waves at rest, beta waves in concentration, gamma waves in moments of sharp focus — each a superposition of sinusoids, each measurable by an EEG, each decomposable by Fourier. The tides are a once-per-day phasor driven by the Moon’s gravitational pull rotating around the Earth. The seasons are a once-per-year sinusoid in solar angle. Tree rings, predator-prey population cycles, the eleven-year sunspot cycle — oscillation everywhere, because nature perpetually overshoots and corrects, overshoots and corrects.</p>
+
+<p><strong>And all of it — every last wave in the universe — is built from the same two functions</strong> you have been watching spin on this screen all along.</p>
+
+<p><span class="eqr" style="font-size:17px;font-family:var(--font-mono)">Cosine.</span>&ensp;<span class="eqi" style="font-size:17px;font-family:var(--font-mono)">Sine.</span>&ensp; A rotation, projected onto an axis. The arrow turning in the complex plane is not just a tool for circuit analysis. It is the atom of oscillation — the single primitive from which sound, light, matter, and spacetime all derive their rhythmic structure. Nature returns to this shape, again and again, at every scale from the subatomic to the cosmological, because it is the only shape a restoring force can make.</p>
+
+<p style="font-size:13px;color:var(--text3);border-top:1px solid var(--border);padding-top:.85rem;margin-top:.5rem">The next time you hear music, watch light scatter through a window, feel the warmth of the sun on your face, or hold your phone — you are in the presence of waves. Trillions of rotating phasors, humming through matter and field and spacetime simultaneously, at every frequency nature allows. And now you know, with genuine understanding, what a wave actually is: a rotating complex vector, casting its shadow onto time.</p>`
+];
+
+/* ══════════════════════════════════════════════════
+   SVG HELPERS
+══════════════════════════════════════════════════ */
+function ns(tag,a){const e=document.createElementNS('http://www.w3.org/2000/svg',tag);for(const[k,v]of Object.entries(a))e.setAttribute(k,v);return e}
+function sa(id,attr,val){document.getElementById(id).setAttribute(attr,val)}
+function setSlider(id,pct){const p=Math.max(0,Math.min(100,pct));document.getElementById('f'+id).style.width=p+'%';document.getElementById('t'+id).style.left='calc('+p+'% - 7px)'}
+
+/* ══════════════════════════════════════════════════
+   BUILD PHASOR SVG
+   Phasor vector = --vec (neutral soft white)
+   Blue dot on Re axis = --cr (moves ←→, cos)
+   Red dot on Im axis  = --ci (moves ↑↓, sin)
+══════════════════════════════════════════════════ */
+const PCX=139,PCY=139;
+function buildPhasor(){
+  const sv=document.getElementById('psv');sv.innerHTML='';
+  const defs=ns('defs',{});
+
+  // Axis arrowhead
+  const axM=ns('marker',{id:'axArr',markerWidth:'8',markerHeight:'6',refX:'7',refY:'3',orient:'auto'});
+  axM.appendChild(ns('polygon',{points:'0 0,8 3,0 6',fill:'rgba(140,180,230,0.4)'}));defs.appendChild(axM);
+
+  // Phasor vector arrowhead — neutral vec color
+  const vM=ns('marker',{id:'vecArr',markerWidth:'9',markerHeight:'7',refX:'8',refY:'3.5',orient:'auto',markerUnits:'userSpaceOnUse'});
+  vM.appendChild(ns('polygon',{points:'0 0,9 3.5,0 7',fill:'var(--vec)'}));defs.appendChild(vM);
+  sv.appendChild(defs);
+
+  // Grid
+  for(const v of[-80,-40,40,80]){
+    sv.appendChild(ns('line',{x1:PCX-108,y1:PCY-v,x2:PCX+108,y2:PCY-v,stroke:'var(--grid)','stroke-width':'0.5'}));
+    sv.appendChild(ns('line',{x1:PCX+v,y1:PCY-108,x2:PCX+v,y2:PCY+108,stroke:'var(--grid)','stroke-width':'0.5'}));
+    const xl=ns('text',{x:PCX+v,y:PCY+124,fill:'var(--ax-lbl)','font-size':'10','font-family':'var(--font-mono)','text-anchor':'middle'});xl.textContent=v;sv.appendChild(xl);
+    const yl=ns('text',{x:PCX-112,y:PCY-v+4,fill:'var(--ax-lbl)','font-size':'10','font-family':'var(--font-mono)','text-anchor':'end'});yl.textContent=v===0?'0':v+'j';sv.appendChild(yl);
+  }
+
+  // Amplitude circle
+  sv.appendChild(ns('circle',{id:'pac',cx:PCX,cy:PCY,r:'80',fill:'none',stroke:'rgba(100,160,255,0.1)','stroke-width':'1.5','stroke-dasharray':'5 4'}));
+
+  // Axes
+  sv.appendChild(ns('line',{x1:PCX-113,y1:PCY,x2:PCX+113,y2:PCY,stroke:'var(--ax)','stroke-width':'1','marker-end':'url(#axArr)'}));
+  sv.appendChild(ns('line',{x1:PCX,y1:PCY+113,x2:PCX,y2:PCY-113,stroke:'var(--ax)','stroke-width':'1','marker-end':'url(#axArr)'}));
+  const rl=ns('text',{x:PCX+116,y:PCY+4,fill:'var(--ax)','font-size':'11','font-family':'var(--font-mono)'});rl.textContent='Re';sv.appendChild(rl);
+  const il=ns('text',{x:PCX+4,y:PCY-116,fill:'var(--ax)','font-size':'11','font-family':'var(--font-mono)'});il.textContent='Im';sv.appendChild(il);
+  sv.appendChild(ns('circle',{cx:PCX,cy:PCY,r:'3',fill:'var(--ax)'}));
+
+  // Projection dashed lines — blue for Re, red for Im
+  sv.appendChild(ns('line',{id:'pph',x1:PCX,y1:PCY,x2:PCX,y2:PCY,stroke:'var(--cr)','stroke-width':'1','stroke-dasharray':'5 4',opacity:'0.5'}));
+  sv.appendChild(ns('line',{id:'ppv',x1:PCX,y1:PCY,x2:PCX,y2:PCY,stroke:'var(--ci)','stroke-width':'1','stroke-dasharray':'5 4',opacity:'0.5'}));
+
+  // Blue dot on Re axis (moves ←→), red dot on Im axis (moves ↑↓)
+  sv.appendChild(ns('circle',{id:'prd',cx:PCX,cy:PCY,r:'5',fill:'var(--cr)'}));
+  sv.appendChild(ns('circle',{id:'pid',cx:PCX,cy:PCY,r:'5',fill:'var(--ci)'}));
+
+  // Angle arc — violet
+  sv.appendChild(ns('path',{id:'parc',fill:'none',stroke:'var(--cp)','stroke-width':'1.5','stroke-dasharray':'4 3',d:''}));
+
+  // Phasor vector — NEUTRAL vec color (not blue, so it doesn't clash with the Re/cos component)
+  sv.appendChild(ns('line',{id:'pvl',x1:PCX,y1:PCY,x2:PCX+80,y2:PCY,stroke:'var(--vec)','stroke-width':'2.5','marker-end':'url(#vecArr)','stroke-linecap':'round'}));
+
+  // Tip glow + dot — neutral vec color
+  sv.appendChild(ns('circle',{id:'pto',cx:PCX+80,cy:PCY,r:'11',fill:'var(--vec)',opacity:'0.15'}));
+  sv.appendChild(ns('circle',{id:'pti',cx:PCX+80,cy:PCY,r:'5',fill:'var(--vec)'}));
+}
+
+/* ══════════════════════════════════════════════════
+   BUILD WAVE SVG
+══════════════════════════════════════════════════ */
+const WCX=50,WCY=107,WW=495,TW=2.5;
+function buildWave(){
+  const sv=document.getElementById('wsv');sv.innerHTML='';
+  const defs=ns('defs',{});
+  const cp=ns('clipPath',{id:'wcp'});cp.appendChild(ns('rect',{x:WCX,y:WCY-102,width:WW,height:204}));defs.appendChild(cp);sv.appendChild(defs);
+
+  for(const v of[-80,-40,0,40,80]){
+    sv.appendChild(ns('line',{x1:WCX,y1:WCY-v,x2:WCX+WW,y2:WCY-v,stroke:'var(--grid)','stroke-width':v===0?'0':'0.5'}));
+    const yl=ns('text',{x:WCX-10,y:WCY-v+4,fill:'var(--ax-lbl)','font-size':'10','font-family':'var(--font-mono)','text-anchor':'end'});yl.textContent=v;sv.appendChild(yl);
+  }
+  for(const p of[0,.25,.5,.75,1]){
+    const xp=WCX+p*WW;
+    sv.appendChild(ns('line',{x1:xp,y1:WCY-102,x2:xp,y2:WCY+102,stroke:'var(--grid)','stroke-width':'0.5'}));
+    const tl=ns('text',{x:xp,y:WCY+120,fill:'var(--ax-lbl)','font-size':'10','font-family':'var(--font-mono)','text-anchor':'middle'});
+    tl.textContent=p===1?'now':((p-1)*TW).toFixed(1)+'s';sv.appendChild(tl);
+  }
+  sv.appendChild(ns('line',{x1:WCX,y1:WCY,x2:WCX+WW+12,y2:WCY,stroke:'var(--ax)','stroke-width':'1'}));
+  sv.appendChild(ns('line',{x1:WCX,y1:WCY-104,x2:WCX,y2:WCY+104,stroke:'var(--ax)','stroke-width':'1'}));
+  const tl2=ns('text',{x:WCX+WW+16,y:WCY+4,fill:'var(--ax)','font-size':'11','font-family':'var(--font-mono)'});tl2.textContent='t';sv.appendChild(tl2);
+  const xl=ns('text',{x:WCX-10,y:WCY-108,fill:'var(--ax)','font-size':'11','font-family':'var(--font-mono)','text-anchor':'end'});xl.textContent='x(t)';sv.appendChild(xl);
+
+  // Cosine wave (blue, behind sine)
+  sv.appendChild(ns('path',{id:'wpc',fill:'none',stroke:'var(--cr)','stroke-width':'2','stroke-linecap':'round','stroke-linejoin':'round','clip-path':'url(#wcp)',opacity:'0.75'}));
+  sv.appendChild(ns('circle',{id:'wcdo',cx:WCX+WW,cy:WCY,r:'10',fill:'var(--cr)',opacity:'0.15'}));
+  sv.appendChild(ns('circle',{id:'wcdi',cx:WCX+WW,cy:WCY,r:'4.5',fill:'var(--cr)'}));
+
+  // Sine wave (red, on top)
+  sv.appendChild(ns('line',{id:'wyt',x1:WCX-8,y1:WCY,x2:WCX,y2:WCY,stroke:'var(--ci)','stroke-width':'2'}));
+  sv.appendChild(ns('path',{id:'wp',fill:'none',stroke:'var(--ci)','stroke-width':'2.5','stroke-linecap':'round','stroke-linejoin':'round','clip-path':'url(#wcp)'}));
+  sv.appendChild(ns('circle',{id:'wdo',cx:WCX+WW,cy:WCY,r:'11',fill:'var(--ci)',opacity:'0.15'}));
+  sv.appendChild(ns('circle',{id:'wdi',cx:WCX+WW,cy:WCY,r:'5',fill:'var(--ci)'}));
+}
+
+buildPhasor();buildWave();
+
+/* ══════════════════════════════════════════════════
+   RENDER
+══════════════════════════════════════════════════ */
+function render(){
+  const{A,f,phi:ph,t}=S;
+  const omega=2*Math.PI*f;
+  const phiRad=ph*Math.PI/180;
+  const theta=omega*t+phiRad;
+  const re=A*Math.cos(theta);   // cosine / Re component
+  const im=A*Math.sin(theta);   // sine   / Im component
+  const tx=PCX+re, ty=PCY-im;  // SVG y is flipped
+
+  // ── Phasor SVG ──────────────────────────────
+  sa('pac','r',A);
+  sa('pvl','x2',tx.toFixed(2)); sa('pvl','y2',ty.toFixed(2));
+  sa('pto','cx',tx.toFixed(2)); sa('pto','cy',ty.toFixed(2));
+  sa('pti','cx',tx.toFixed(2)); sa('pti','cy',ty.toFixed(2));
+  // Re projection: vertical dashed tip → Re axis
+  sa('pph','x1',tx.toFixed(2)); sa('pph','y1',ty.toFixed(2));
+  sa('pph','x2',tx.toFixed(2)); sa('pph','y2',PCY);
+  // Im projection: horizontal dashed tip → Im axis
+  sa('ppv','x1',tx.toFixed(2)); sa('ppv','y1',ty.toFixed(2));
+  sa('ppv','x2',PCX);           sa('ppv','y2',ty.toFixed(2));
+  // Blue dot on Re axis (cos, ←→), red dot on Im axis (sin, ↑↓)
+  sa('prd','cx',tx.toFixed(2)); sa('prd','cy',PCY);
+  sa('pid','cx',PCX);           sa('pid','cy',ty.toFixed(2));
+  // Angle arc
+  const arcR=Math.min(34,A*0.38);
+  const normRad=((theta%(2*Math.PI))+2*Math.PI)%(2*Math.PI);
+  const arcEx=(PCX+arcR*Math.cos(theta)).toFixed(2);
+  const arcEy=(PCY-arcR*Math.sin(theta)).toFixed(2);
+  const large=normRad>Math.PI?1:0;
+  sa('parc','d',(normRad<0.015||normRad>2*Math.PI-0.015)
+    ? '' : `M ${(PCX+arcR).toFixed(2)} ${PCY} A ${arcR} ${arcR} 0 ${large} 0 ${arcEx} ${arcEy}`);
+  document.getElementById('pr').innerHTML=
+    `<span class="eqr">${re.toFixed(1)}</span><span class="dim"> ${im>=0?'+':''}j</span><span class="eqi">${im.toFixed(1)}</span>`;
+
+  // ── Wave SVG ────────────────────────────────
+  const steps=280; let dS='',dC='';
+  for(let i=0;i<=steps;i++){
+    const frac=i/steps, wt=t-(1-frac)*TW;
+    const sv2=A*Math.sin(omega*wt+phiRad);
+    const cv2=A*Math.cos(omega*wt+phiRad);
+    const xp=(WCX+frac*WW).toFixed(1);
+    dS+=(i===0?`M ${xp} ${(WCY-sv2).toFixed(1)}`:`L ${xp} ${(WCY-sv2).toFixed(1)}`);
+    dC+=(i===0?`M ${xp} ${(WCY-cv2).toFixed(1)}`:`L ${xp} ${(WCY-cv2).toFixed(1)}`);
+  }
+  sa('wp','d',dS); sa('wpc','d',dC);
+  const sinY=(WCY-im).toFixed(2), cosY=(WCY-re).toFixed(2);
+  sa('wdo','cy',sinY); sa('wdi','cy',sinY); sa('wyt','y1',sinY); sa('wyt','y2',sinY);
+  sa('wcdo','cy',cosY); sa('wcdi','cy',cosY);
+  document.getElementById('wr').innerHTML=
+    `<span class="eqi">sin = ${im.toFixed(2)}</span>&nbsp;<span class="dim">|</span>&nbsp;<span class="eqr">cos = ${re.toFixed(2)}</span>`;
+
+  // ── Badges ──────────────────────────────────
+  const tN=(((theta*180/Math.PI)%360)+360)%360;
+  document.getElementById('hA').textContent=A;
+  document.getElementById('hF').textContent=f.toFixed(2)+' Hz';
+  document.getElementById('hP').textContent=ph+'°';
+  document.getElementById('hT').textContent=tN.toFixed(1)+'°';
+
+  // ── Live equations ───────────────────────────
+  const omStr=omega.toFixed(3);
+  // Build the argument string for cos/sin with actual values, color-coded
+  const phPart=ph===0?''
+    : ph>0 ? ` + <span class="eqp">${ph}°</span>`
+    : ` &minus; <span class="eqp">${Math.abs(ph)}°</span>`;
+  const arg=`<span class="eqf">${omStr}</span>t${phPart}`;
+
+  // Format t for "Now" display
+  const tStr=t.toFixed(2);
+
+  // Left panel — static phasor
+  const imSign=im>=0?'+':'&minus;';
+  document.getElementById('es').innerHTML=
+    `<div class="eq-row"><span class="eq-lbl dim">Polar&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</span><span class="eqv">𝐕</span> = <span class="eqa">${A}</span> ∠ <span class="eqp">${ph}°</span></div>`+
+    `<div class="eq-row"><span class="eq-lbl dim">Exponential</span><span class="eqv">𝐕</span> = <span class="eqa">${A}</span>·e<sup>j<span class="eqp">${ph}°</span></sup></div>`+
+    `<div class="eq-row"><span class="eq-lbl dim">Rectangular</span><span class="eqv">𝐕</span> = <span class="eqr">${re.toFixed(2)}</span> ${imSign} j<span class="eqi">${Math.abs(im).toFixed(2)}</span></div>`;
+
+  // Right panel — full derivation with actual values, then labeled time-domain rows
+  document.getElementById('ed').innerHTML=
+    // Step 1: rotating exponential with real values
+    `<div class="eq-row"><span class="eq-lbl dim">Rotating</span><span class="eqv">𝐕</span>(t) = <span class="eqa">${A}</span>·e<sup>j(${arg})</sup></div>`+
+    // Step 2: Euler expansion with real values and color on cos/sin
+    `<div class="eq-row"><span class="eq-lbl dim"></span>= <span class="eqa">${A}</span>·[<span class="eqr">cos(${arg})</span> + j·<span class="eqi">sin(${arg})</span>]</div>`+
+    `<hr class="eq-divider">`+
+    // Cosine — time domain + now
+    `<div class="eq-row"><span class="eq-lbl eqr">Time domain</span><span class="eqr">x(t) = <span class="eqa">${A}</span>·cos(${arg})</span></div>`+
+    `<div class="eq-row"><span class="eq-lbl dim">Now</span><span class="eqr">x(${tStr}s) = ${re.toFixed(3)}</span></div>`+
+    `<hr class="eq-divider">`+
+    // Sine — time domain + now
+    `<div class="eq-row"><span class="eq-lbl eqi">Time domain</span><span class="eqi">x(t) = <span class="eqa">${A}</span>·sin(${arg})</span></div>`+
+    `<div class="eq-row"><span class="eq-lbl dim">Now</span><span class="eqi">x(${tStr}s) = ${im.toFixed(3)}</span></div>`;
+
+  // ── Slider positions ─────────────────────────
+  setSlider('A',(A-10)/90*100);
+  setSlider('F',(f-.1)/1.9*100);
+  setSlider('P',(ph+180)/360*100);
+  setSlider('T',S.t/20*100);
+  document.getElementById('vA').textContent=A;
+  document.getElementById('vF').textContent=f.toFixed(2)+' Hz';
+  document.getElementById('vP').textContent=ph+'°';
+  document.getElementById('vT').textContent=S.t.toFixed(2)+' s';
+}
+
+/* ══════════════════════════════════════════════════
+   ANIMATION LOOP
+══════════════════════════════════════════════════ */
+function tick(ts){
+  if(S.play&&lastTs!==null){S.t+=(ts-lastTs)/1000;if(S.t>20)S.t=0;document.getElementById('sT').value=S.t}
+  lastTs=ts; render(); requestAnimationFrame(tick);
+}
+requestAnimationFrame(tick);
+
+/* ══════════════════════════════════════════════════
+   CONTROLS
+══════════════════════════════════════════════════ */
+document.getElementById('bp').addEventListener('click',function(){
+  S.play=!S.play; lastTs=null;
+  this.textContent=S.play?'⏸\u00A0 Pause':'▶\u00A0 Play';
+  this.className=S.play?'btn primary':'btn';
+});
+document.getElementById('br').addEventListener('click',()=>{S.t=0;document.getElementById('sT').value=0;lastTs=null});
+document.getElementById('sA').addEventListener('input',function(){S.A=+this.value});
+document.getElementById('sF').addEventListener('input',function(){S.f=+this.value});
+document.getElementById('sP').addEventListener('input',function(){S.phi=+this.value});
+document.getElementById('sT').addEventListener('input',function(){S.t=+this.value;lastTs=null});
+document.getElementById('sT').addEventListener('mousedown',()=>{
+  S.play=false; lastTs=null;
+  document.getElementById('bp').textContent='▶\u00A0 Play';
+  document.getElementById('bp').className='btn';
+});
+
+/* ══════════════════════════════════════════════════
+   THEORY TABS
+══════════════════════════════════════════════════ */
+document.getElementById('tabs').addEventListener('click',e=>{
+  const tab=e.target.closest('[data-t]'); if(!tab)return;
+  document.querySelectorAll('.tab').forEach(t=>t.classList.remove('on'));
+  tab.classList.add('on');
+  document.getElementById('thy').innerHTML=theories[+tab.dataset.t];
+});
+document.getElementById('thy').innerHTML=theories[0];
+render();
+</script>
+</body>
+</html>
